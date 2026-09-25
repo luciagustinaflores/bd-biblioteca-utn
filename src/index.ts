@@ -52,34 +52,46 @@ const createBook = async (data: string[]) => {
         category: "Sin categoría"
         }
     
-        const [firstKey, firstValue] = data[0]?.split("=") || []
-        if (firstKey !== "title" || !firstValue) {
-        console.log("El título es obligatorio")
-        return
-        }
-        for (let i = 0; i < data.length; i++) {
-            const [prop, value] = data[i]?.split("=") as string[]
+        const isKeyValueFormat = data[0].includes("=")
+        if (isKeyValueFormat) {
+            for (let i = 0; i < data.length; i++) {
+                const [prop, value] = data[i]?.split("=") as string[]
 
-            switch (prop) {
-                    case "title":
-                    newBook.title = value
-                    break
-                    case "author":
-                    newBook.author = value ? value : newBook.author
-                    break
-                    case "price":
-                    newBook.price = value ? Number(value) : newBook.price
-                    break
-                    case "stock":
-                    newBook.stock = value ? Number(value) : newBook.stock
-                    break
-                    case "category":
-                    newBook.category = value ? value : newBook.category
-                    break
-                    default:
-                    // throw generateError("Propiedad no válida para el libro", "InvalidData")
-                }
+                switch (prop) {
+                        case "title":
+                        newBook.title = value
+                        break
+                        case "author":
+                        newBook.author = value ? value : newBook.author
+                        break
+                        case "price":
+                        newBook.price = value ? Number(value) : newBook.price
+                        break
+                        case "stock":
+                        newBook.stock = value ? Number(value) : newBook.stock
+                        break
+                        case "category":
+                        newBook.category = value ? value : newBook.category
+                        break
+                        default:
+                        // throw generateError("Propiedad no válida para el libro", "InvalidData")
+                    }
+            }
+        } else {
+            const [title, author, price, stock, category] = data
+
+            newBook.title = title || ""
+            newBook.author = author || newBook.author
+            newBook.price = price ? Number(price) : newBook.price
+            newBook.stock = stock ? Number(stock) : newBook.stock
+            newBook.category = category || newBook.category
         }
+
+        if (!newBook.title) {
+            console.log("El título es obligatorio.")
+            return
+        }
+
         return await Book.create(newBook)
 
     } catch (error) {
