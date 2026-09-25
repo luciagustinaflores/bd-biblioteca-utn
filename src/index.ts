@@ -15,6 +15,12 @@ connectDb(URI_DB)
 const args = process.argv.splice(2)
 const action = args[0]
 
+const generateError = (message: string, name: string) => {
+  const error = new Error(message)
+  error.name = name
+  return error
+}
+
 const handleError = (error: Error) => {
   if (error.name === "CastError") {
     return "Invalid ID"
@@ -22,6 +28,7 @@ const handleError = (error: Error) => {
 
   return error.message
 }
+
 
 interface IBooks {
   title: string
@@ -74,7 +81,7 @@ const createBook = async (data: string[]) => {
                         newBook.category = value ? value : newBook.category
                         break
                         default:
-                        // throw generateError("Propiedad no válida para el libro", "InvalidData")
+                        throw generateError("Propiedad no válida para el libro", "InvalidData")
                     }
             }
         } else {
@@ -88,8 +95,7 @@ const createBook = async (data: string[]) => {
         }
 
         if (!newBook.title) {
-            console.log("El título es obligatorio.")
-            return
+            throw generateError("Title needed", "TitleNeeded")
         }
 
         return await Book.create(newBook)
@@ -106,9 +112,14 @@ const readBook = async (id: string | undefined) => {
 
         const foundBook = await Book.findById(id)
 
+        if (!foundBook) throw generateError("Item not found", "ItemNotFound")
+
         return foundBook
 
-    } catch (e) {console.log("Product not found")}
+    } catch (error) {
+        const e = error as Error
+        return handleError(e)
+    }
 }
 
 const updateBook = async (id: string | undefined, updates: string[]) => {
@@ -116,7 +127,7 @@ const updateBook = async (id: string | undefined, updates: string[]) => {
         const data: Partial<IBooks> = {}
         for (const update of updates) {
             const [prop, value] = update.split("=")
-            // if (!value) {throw generateError('Invalid data for ${prop}')}
+            if (!value) {throw generateError('Invalid data for ${prop}', "InvalidDataForProp")}
             switch (prop) {
                 case "title":
                     data.title = value
@@ -133,13 +144,15 @@ const updateBook = async (id: string | undefined, updates: string[]) => {
                 case "category":
                     data.category = value
                     break
-                // default:
-                //     throw generateError("Invalid data to update book")
+                default:
+                    throw generateError("Invalid data to update book", "InvalidDataForUpdate")
             }
         }
 
         return await Book.findByIdAndUpdate(id, data, {new: true})
-    }catch (e) {console.log("Error") }
+    } catch (error) {
+        const e = error as Error
+        return handleError(e) }
 }
 
 const deleteBook = async (id: string | undefined) => {
@@ -150,10 +163,12 @@ const deleteBook = async (id: string | undefined) => {
 
         const deletedBook = await Book.findByIdAndDelete(id) 
 
-        // if (!deletedBook) throw generateError("Product not found", "ProductNotFound")
+        if (!deletedBook) throw generateError("Product not found", "ProductNotFound")
         
         return deletedBook
-    } catch (e) {console.log("Could not delete book")}
+    } catch (error) {
+        const e = error as Error
+        return handleError(e) }
 }
 
 const main = async () => {
